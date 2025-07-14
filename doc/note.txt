@@ -1,0 +1,22 @@
+Q, How to control if a tensor need gradient or not.
+A, 
+    - requires_grade=True/False
+    - z = x.detach()
+    - z = x.clone().requires_grad_(False)
+
+Q, How to control if computation step need gradient or not.
+A, 
+    - with torch.no_grad(): / with torch.
+    - torch.set_grad_abled(False) / torch.set_grad_abled(True)
+
+Q, Evaluation mode and training mode
+A,
+    - Evaluation mode:
+        - model.eval()
+        - used in test or inference
+        - close autograd
+        - keep all nerual unit alive in Dropout
+        - use global mean and global variance in BatchNorm(no-upgrade)
+
+
+        

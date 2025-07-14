@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torch import nn
+from einops import einsum
 
 class SimpleModel(nn.Module):
     def __init__(
@@ -42,7 +43,7 @@ def train_loop(
 def generate_data(num_samples: int=100, input_dim: int=4):
     X = torch.randn(num_samples, input_dim)
     weights = torch.tensor([1.0, -0.5, 0.3, 0.2], dtype=torch.float32)
-    y = (X @ weights).unsqueeze(1) + torch.randn(num_samples, 1) * 0.1
+    y = einsum(X, weights, "num_samples input_dim, input_dim -> num_samples").unsqueeze(1) + torch.randn(num_samples, 1) * 0.1
     return X, y
 
 if __name__ == '__main__':
@@ -56,7 +57,7 @@ if __name__ == '__main__':
 
     x_train, y_train = generate_data(1000, input_dim)
     x_test, y_test = generate_data(200, input_dim)
-    
+
     model.train()
     train_loop(model, optimizer, criterion, x_train, y_train, epochs=100)
 
