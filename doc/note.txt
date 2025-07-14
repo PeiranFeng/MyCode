@@ -30,6 +30,8 @@ with Cache.enabled:
     func()
 
 ---------------July 14---------------------
+CI/CD
+  - SSH is stabler than https on git.
 simple_demo.py
   - Dropout in forward -> self.dropout = Dropout()
     Module的子类都应该在__init__中执行一次初始化，避免在方法中多次调用（避免重复对一个
