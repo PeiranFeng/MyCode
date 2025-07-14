@@ -1,13 +1,15 @@
+-----------------------July 9----------------------------------
+
 Q, How to control if a tensor need gradient or not.
 A, 
-    - requires_grade=True/False
-    - z = x.detach()
-    - z = x.clone().requires_grad_(False)
+    - requires_grad=True/False # 
+    - z = x.detach() #推荐
+    - z = x.clone().requires_grad_(False) # 不推荐 clone
 
 Q, How to control if computation step need gradient or not.
 A, 
     - with torch.no_grad(): / with torch.
-    - torch.set_grad_abled(False) / torch.set_grad_abled(True)
+    - torch.set_grad_abled(False) / torch.set_grad_abled(True) # 不推荐
 
 Q, Evaluation mode and training mode
 A,
@@ -19,4 +21,36 @@ A,
         - use global mean and global variance in BatchNorm(no-upgrade)
 
 
-        
+调用关系 __torch_function__ x.sort() torch.sort()
+
+@cacheable
+def func(self, x, y)
+
+with Cache.enabled:
+    func()
+
+---------------July 14---------------------
+simple_demo.py
+  - Dropout in forward -> self.dropout = Dropout()
+    Module的子类都应该在__init__中执行一次初始化，避免在方法中多次调用（避免重复对一个
+Module Parameters初始化）
+
+  - super.__init__() is needed in construct function of sub-classes of nn.Module
+    Module父类会需要先初始化一些方法的参数 这是必要的
+compass-core
+
+  - staticmethod, __new__() is necessary if you define a class inherit torch.Tensor, 
+cause normaly you want to implement some different logic from super class
+
+  - **classmethod, __torch_function__() is very important, you should learn more 
+details about it.**
+
+Todo list
+  - Find out if torch.sort(x) will call x.sort(). If it true, you can only overwrite
+sort function in your own Tensor which inherit torch.Tensor.
+  - Implement requirement raised in issues #161, #162 and #165
+    You should turn to issues' web pages and create a branch for the issue you are watching.
+    All PRs(pull requests) will perform pytest auto to check all test function, So you should 
+implement both lib script and corresponding test function.
+    You also should @ a person to check details of the PR after passed by github's auto 
+checkout.  

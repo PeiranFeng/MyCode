@@ -15,13 +15,14 @@ class SimpleModel(nn.Module):
             nn.Linear(input_dim, hidden_dim)
             for _ in range(num_layers)
         ])
+        self.dropout = nn.Dropout(0.2)
         self.final = nn.Linear(hidden_dim, 1)
     
     def forward(self, x):
         for layer in self.layers:
             y = layer(x)
             y = torch.relu(y)
-            y = nn.Dropout(0.2)(y)
+            y = self.dropout(y)
         return self.final(y)
 
 def train_loop(
