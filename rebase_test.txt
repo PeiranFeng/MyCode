@@ -21,7 +21,7 @@ This is rebase_test branch.
 Process in rebase operation is that all unmerged commits of your local branch will be commit to dev branch, and 
 maybe you should solve conflicts manually.
 But all those operations is hapened in your local branch,which means there are no influences on dev branch.
-Just like rebase the local branch to dev branch and commit all changes again.
+Just like rebase the local branch to dev branch, commit all changes again, and all other's commits look like happened before the moment that your local branch is created.
 
 If nothing else, you can use 'git rebase --abort' on your local branch, and the state of your local branch will be returned from rebasing to earlier.
 
