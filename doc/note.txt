@@ -22,9 +22,13 @@ A,
 
 
 调用关系 __torch_function__ x.sort() torch.sort()
+Both x.sort() and torch.sort() will call __torch_function__() with func.__name__ is 'sort'.
+x.sort() and torch.sort() do not call each other.
 
 @cacheable
 def func(self, x, y)
+
+You should implement this by store cache data on the self entity.
 
 with Cache.enabled:
     func()
@@ -49,7 +53,7 @@ details about it.**
 
 Todo list
   - Find out if torch.sort(x) will call x.sort(). If it true, you can only overwrite
-sort function in your own Tensor which inherit torch.Tensor.
+sort function in your own Tensor which inherit torch.Tensor.(False)
   - Implement requirement raised in issues #161, #162 and #165
     You should turn to issues' web pages and create a branch for the issue you are watching.
     All PRs(pull requests) will perform pytest auto to check all test function, So you should 
