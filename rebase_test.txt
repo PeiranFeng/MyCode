@@ -26,5 +26,5 @@ Just like rebase the local branch to dev branch and commit all changes again.
 If nothing else, you can use 'git rebase --abort' on your local branch, and the state of your local branch will be returned from rebasing to earlier.
 
 # what else
-If you have push to origin before rebase. When next time you push local branch, it will be required to solve conflicts manually 
+If you have pushed to origin before rebase. When next time you push local branch, it will be required to solve conflicts manually 
 which normally origin branch will be covered by local branch.
