@@ -6,3 +6,7 @@ initial on dev
 
 # This is others' modifications.
 This is rebase_test branch.
+
+
+# You can use 'git rebase dev' on rebase_test branch to auto-merge and solve confilicts between others' and your's.
+# Now normally, rebase_test modified by you is ahead of dev.
