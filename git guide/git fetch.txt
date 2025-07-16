@@ -1,0 +1,3 @@
+'git fetch origin' will update origin statue to local.
+
+'--prune' parameter can delete local quotations which have been deleted on remote in the same time.
