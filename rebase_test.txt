@@ -14,3 +14,5 @@ This is rebase_test branch.
 # Now normally, rebase_test modified by you is ahead of dev.
 
 # There are more modifications commited by other developer, now you should rebase again.
+
+# rebase will commit-wise compare your modifications and others', don't be afraid, you can re-add and re-commit each time when there have confilicts. 
