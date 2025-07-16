@@ -1,5 +1,7 @@
 initial
 initial on dev
-# I will create a new branch rebase_test from dev and push some modifications(in this file) on local.
+# I will create a new branch rebase_test from dev and commit some modifications(in this file) on local.
 # After, I will create a new branch other from dev, push some modifications(in this file) and merge to dev.
 # Now dev is ahead of rebase_test, I can test how to move commits on dev to rebase_test.
+
+# This is others' modifications.
