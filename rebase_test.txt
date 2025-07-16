@@ -15,4 +15,12 @@ This is rebase_test branch.
 
 # There are more modifications commited by other developer, now you should rebase again.
 
-# rebase will commit-wise compare your modifications and others', don't be afraid, you can re-add and re-commit each time when there have confilicts. 
+# rebase will commit-wise compare your modifications and others', don't be afraid, you can re-add and re-commit each time when there have confilicts.
+
+# conclusion
+Process in rebase operation is that all unmerged commits of your local branch will be commit to dev branch, and 
+maybe you should solve conflicts manually.
+But all those operations is hapened in your local branch,which means there are no influences on dev branch.
+Just like rebase the local branch to dev branch and commit all changes again.
+
+If nothing else, you can use 'git rebase --abort' on your local branch, and the state of your local branch will be returned from rebasing to earlier.
