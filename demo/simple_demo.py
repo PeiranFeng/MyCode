@@ -61,6 +61,7 @@ if __name__ == '__main__':
 
     model.train()
     train_loop(model, optimizer, criterion, x_train, y_train, epochs=100)
+    print('optimizer', optimizer.state_dict())
 
     model.eval()
     with torch.no_grad():

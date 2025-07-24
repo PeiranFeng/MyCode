@@ -60,3 +60,18 @@ sort function in your own Tensor which inherit torch.Tensor.(False)
 implement both lib script and corresponding test function.
     You also should @ a person to check details of the PR after passed by github's auto 
 checkout.  
+
+--------------July 18-------------------
+1 配置
+shift manual yaml to hydra
+
+2 模型训练时间
+模型训练一次 第x天开始用n天
+想要知道这次输出距离上次训练有多少天
+inference：加注自己的训练时间
+
+3 线代
+在约束下拟合一些东西
+照着文档结论 把真实数据拟合一下
+独立的均值回归-> 联合的均值回归
+低秩矩阵（减少计算量 降噪）下的均值回归模型

@@ -8,7 +8,7 @@ from functools import wraps
 
 def decorator(func):
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapped(self, *args, **kwargs):
         if not isinstance(self, type):
             if not hasattr(self, 'cache'):
                 print('Initial attr cache')
@@ -25,7 +25,22 @@ def decorator(func):
                 self.__setattr__('cache', cache)
                 return ret
         return func(self, *args, **kwargs)
-    return wrapper
+    print('type of wrapped decorated by wraps()', type(wrapped))
+    return wrapped
+
+def pro_decorator(func):
+    def wrapped(*args, **kwargs):
+        attr = '__dict__'
+        try:
+            value = getattr(func, attr)
+        except AttributeError:
+            print('fail to getattr')
+            pass
+        else:
+            print(attr, value)
+
+        return func(*args, **kwargs)
+    return wrapped
 
 class DummyClass:
     def __init__(self, data):
@@ -34,7 +49,11 @@ class DummyClass:
     @decorator
     def bound_func(self):
         return f"Bound method called with data: {self.data}"
-    
+
+    @pro_decorator
+    def bound_func2(self):
+        return f"Bound method called with data: {self.data}"
+
     @classmethod
     def class_method(cls):
         return f"Class method called with class: {cls.__name__}"
@@ -57,5 +76,7 @@ def test_bound():
     another = DummyClass('Another one.')
     assert not hasattr(another, 'cache')
 
-
+def test_pro_decorator():
+    instance = DummyClass('test')
+    instance.bound_func2()
 

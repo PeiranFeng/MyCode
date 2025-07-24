@@ -1,0 +1,1 @@
+from _generator_ import generator as gambles_generator

@@ -1,0 +1,15 @@
+# 配置子模块
+[submodule "core"]
+	path = core
+	url = ../compass-core.git
+	branch = develop
+# 在.gitmodules文件中配置类似信息
+
+# 初始化子模块
+git submodule update --init
+
+# 更新子模块到最新提交
+git submodule update --remote
+
+# 递归更新子模块
+git submodule update --remote --recursive
