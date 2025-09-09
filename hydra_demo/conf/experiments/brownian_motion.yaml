@@ -1,0 +1,2 @@
+exp_name: 'brownnian_motion'
+sum: !add [1, 2]

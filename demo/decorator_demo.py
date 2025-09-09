@@ -1,5 +1,11 @@
+"""
+装饰过的函数和原函数不相同
+"""
+
 from functools import wraps
 import inspect
+
+_origen_method_ = dict()
 
 def decorator(func):
     @wraps(func)
@@ -8,13 +14,10 @@ def decorator(func):
         print('can detect method: ',inspect.ismethod(func))
         print('self: ',isinstance(self, DummyClass))
         print('cls: ', isinstance(self, type))
+        _origen_method_[self] = func
         return func(self, *args, **kwargs)
     print('decorator')
     return wrapper
-
-@decorator
-def func():
-    print('func')
 
 class DummyClass():
     def __init__(self, data):
@@ -33,6 +36,8 @@ if __name__ == '__main__':
     a = DummyClass('A')
     print('\ta.get')
     a.get()
+    assert a.get != _origen_method_[a]
     print('\tclass method')
     DummyClass.class_method()
     print('end')
+

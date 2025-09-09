@@ -1,0 +1,3 @@
+model_type: brownian_motion
+forecast_horizon: ${constants.forecast_horizon}
+rebalance_period: ${constants.rebalance_period}

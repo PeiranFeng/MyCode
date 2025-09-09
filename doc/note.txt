@@ -75,3 +75,50 @@ inference：加注自己的训练时间
 照着文档结论 把真实数据拟合一下
 独立的均值回归-> 联合的均值回归
 低秩矩阵（减少计算量 降噪）下的均值回归模型
+
+-----------------------July 25-----------------------------------
+use bash $env:PYTHONPATH="C:\Data\compass-core" to set PYTHONPATH
+
+
+----------------------July 30-------------------------------------
+while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
+
+git rev-parse HEAD 查看当前分支所处提交的hash
+
+git clean -df 清除多于远程版本的代码
+
+RUN_LEVEL=SANITY Seeds=seed-00 Data=/data/JP_end_2025-04-11/data python ~/data/compass-app-jasper/app/build.py all 测试jasper代码正确性
+
+----------------------Aug 8--------------------------------------
+ssh peiran@172.16.10.15  - 公司机房机器
+
+C:\azure-cli-2.76.0-x64\bin\az.cmd ssh vm --ip 10.0.2.28 - 虚拟机登录
+ssh peiran@fengheasia.com@10.0.2.28 - 虚拟机ssh登录 用户名为peiran@fengheasia.com
+
+---------------------Aug 27---------------------------------------
+ssh -Tv git@github.com 测试ssh链接github
+
+# Run override sweep command
+python ~/data/compass-app-jasper/app/parent_job.py --data /data/JP_end_2025-04-11/data --sweep-config ~/data/compass-app-jasper/conf/experiments/search_spaces/usecase_rebalance_period.yaml --run-level SANITY
+
+--------------------Sep 2----------------------------------------
+tensorboard --bind_all --logdir ./ # Perform in job dir to build a sequence of viewable data which can be seen on web page by creating a service on a default port.
+tensorboard --logdir log/seed-00/window_2022-11-28_2024-12-24/loss/ --host 0.0.0.0 #查看matric logdir
+http://10.0.2.28:6006/#timeseries # View in web page after perform tensorboard in 10.0.2.28
+
+conda activate finai-1.1.0 # Activate a conda environment which name is finai-1.1.0.
+
+
+--------------------Sep 3-----------------------------------------
+uv run pytest .\test\data\test_extendable_dataframe.py:test_cinsert  
+
+https://fenghe.ai/web2/#/finance-home/index
+帐号：peiran@fengheasia.com
+密码：N!4rXp&K8vZd
+
+-------------------Sep 4------------------------------------------
+# -r 拷贝目录
+scp -r peiran@fengheasia.com@10.0.2.28:~/data/compass-app-jasper/job-0003 C:\Data\Jobs\BACKTEST_2Y,Seed-00\job-0003
+
+# 两年回测命令 
+python ~/data/compass-app-jasper/app/parent_job.py --data /data/JP_end_2025-04-11/data --run-level BACKTEST_2Y --seeds seed-00

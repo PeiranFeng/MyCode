@@ -11,3 +11,4 @@ if __name__ == '__main__':
     print(func(5, 2))
     print(func_3(5))  # Output: 15
     print(func_4(5))  # Output: 20
+    print(type(func_3))

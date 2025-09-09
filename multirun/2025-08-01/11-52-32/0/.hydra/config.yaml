@@ -1,0 +1,23 @@
+train_setting:
+  model: GCN
+  n_epoches: 3
+  lr: 0.0005
+  batch_size: 512
+n_epoches: 3
+lr: 0.0005
+dataset: ogbn-arxiv
+add_self_loop: false
+output_dir: null
+train-settering:
+  n_epoches: 3
+  lr: 0.0005
+train-settering2:
+  n_epoches: 4
+  lr: 0.0005
+lr_list:
+- 0.001
+- 0.0003
+- 0.0001
+dataset_list:
+- ogbn-arxiv
+- ogbn-papers100M

@@ -1,0 +1,19 @@
+git status # 可以看当前分支的HEAD指向
+git rev-parse HEAD # 查看当前分支所处提交的hash
+
+git clean -fd  # 删除未跟踪的文件和目录
+git clean -fdx  # 删除所有未跟踪的文件，包括 .gitignore 中的文件
+
+git reset --hard HEAD   # *清除本地修改 清除本地缓存 清除本地提交
+git reset --mixed HEAD  # 保留本地修改 *清除本地缓存 清除本地提交
+git reset --soft HEAD   # 保留本地修改 保留本地缓存 *清除本地提交
+
+# 丢弃所有已跟踪文件的修改（保留未跟踪文件）
+git checkout -- .
+# 丢弃特定文件的修改
+git checkout -- filename
+
+HEAD~1    # 当前提交的前一个提交
+HEAD~2    # 当前提交的前两个提交
+HEAD^     # 当前提交的父提交（等同于HEAD~1）
+HEAD^^    # 祖父提交（等同于HEAD~2）

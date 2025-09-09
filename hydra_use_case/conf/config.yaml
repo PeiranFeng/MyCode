@@ -1,0 +1,6 @@
+
+
+forecast: ${schema}
+
+defaults:
+ - schema: default.yaml
