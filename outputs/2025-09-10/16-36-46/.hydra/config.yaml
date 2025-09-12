@@ -1,0 +1,8 @@
+train_setting:
+  model: base
+  n_epoches: 1
+  lr: 0.01
+  batch_size: 32
+  test: 1
+  indices: null
+name: conf

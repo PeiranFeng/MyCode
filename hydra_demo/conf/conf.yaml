@@ -23,7 +23,9 @@
 #   n_epoches: 10
 #   lr: 5e-4
 #   batch_size: 512
+indices: [1,2,3]
 train_setting:
+  indices: ${indices}
   model: base
   n_epoches: 1
   lr: 0.01

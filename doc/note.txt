@@ -122,3 +122,7 @@ scp -r peiran@fengheasia.com@10.0.2.28:~/data/compass-app-jasper/job-0003 C:\Dat
 
 # 两年回测命令 
 python ~/data/compass-app-jasper/app/parent_job.py --data /data/JP_end_2025-04-11/data --run-level BACKTEST_2Y --seeds seed-00
+
+
+------------------Sep 11--------------------------------------------------
+nvidia-smi  #查看显卡有没有被使用
