@@ -7,7 +7,6 @@ from itertools import product
 from pathlib import Path
 from hydra.core.hydra_config import HydraConfig
 from functools import singledispatch
-# from myConfPath import MyConfPath
 
 JOD_ID = 0
 CONF_DIR = '../conf'
@@ -65,9 +64,10 @@ def main():
     conf_cfg_name = "conf"
     with hydra.initialize(config_path=CONF_DIR):
         config_name = 'config'
-        cfg = hydra.compose(config_name, overrides=["++file_relative_path=../schema/override.yaml"])
-        print(OmegaConf.to_object(cfg))
-        OmegaConf.save(cfg, Path.cwd()/'hydra_use_case'/'conf'/'overrides.yaml')
+        cfg = hydra.compose(config_name, overrides=["path._target_=hydra_use_case.myConfPath.AConfPath"])
+        myconfpath = instantiate(cfg.path_1)
+        print(myconfpath.config_name)
+        # OmegaConf.save(cfg, Path.cwd()/'hydra_use_case'/'conf'/'overrides.yaml')
 
 
 

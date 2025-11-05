@@ -2,5 +2,20 @@
 
 forecast: ${schema}
 
+path: &path
+  _target_: hydra_use_case.objs.myConfPath.MyConfPath
+  _args_: 
+    - config_name
+    - &obj {name: one,value: 1}
+
+path_1:
+  <<: *path
+  _args_:
+    - config_name
+    - _1
+    - <<: *obj
+      value: 2
+
+
 defaults:
  - schema: default.yaml

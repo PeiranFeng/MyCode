@@ -87,7 +87,9 @@ git rev-parse HEAD 查看当前分支所处提交的hash
 
 git clean -df 清除多于远程版本的代码
 
-RUN_LEVEL=SANITY Seeds=seed-00 Data=/data/JP_end_2025-04-11/data python ~/data/compass-app-jasper/app/build.py all 测试jasper代码正确性
+# 测试jasper代码正确性
+RUN_LEVEL=SANITY Seeds=seed-00 Data=/data/JP_end_2025-07-22/data_2 python ~/data/compass-app-jasper/app/build.py all 
+task build -t ~/data/compass-app-jasper/app/Taskfile.yaml RUN_LEVEL=SANITY Seeds=seed-00 Data=/data/JP_end_2025-07-22/data_2 goal=all ROOT="$(pwd)"
 
 ----------------------Aug 8--------------------------------------
 ssh peiran@172.16.10.15  - 公司机房机器
@@ -117,12 +119,25 @@ https://fenghe.ai/web2/#/finance-home/index
 密码：N!4rXp&K8vZd
 
 -------------------Sep 4------------------------------------------
-# -r 拷贝目录
+# -r 递归拷贝目录
+# 从服务器拷贝到本地
 scp -r peiran@fengheasia.com@10.0.2.28:~/data/compass-app-jasper/job-0003 C:\Data\Jobs\BACKTEST_2Y,Seed-00\job-0003
+# 从本地拷贝到服务器
+scp -r /path/to/local_dir username@server_ip:/path/to/remote_dir
 
+# 多任务
+python ~/data/compass-app-jasper/app/parent_job.py --data /data/JP_end_2025-07-22/data_2 --run-level BACKTEST_2Y --seeds seed-00
 # 两年回测命令 
-python ~/data/compass-app-jasper/app/parent_job.py --data /data/JP_end_2025-04-11/data --run-level BACKTEST_2Y --seeds seed-00
-
+task build -t ~/data/compass-app-jasper/app/Taskfile.yaml RUN_LEVEL=BACKTEST_2Y Seeds=seed-00 Data=/data/JP_end_2025-07-22/data_2 goal=all ROOT="$(pwd)"
 
 ------------------Sep 11--------------------------------------------------
 nvidia-smi  #查看显卡有没有被使用
+
+
+------------------Nov 5----------------------------------------------------
+#conda 切换虚拟环境
+conda activate finai-1.1.0
+#屏蔽用户目录环境
+export PYTHONNOUSERSITE=1
+# rabse 前期过渡冗长重复冲突
+git checkout --ours .;git add .;git rebase --continue

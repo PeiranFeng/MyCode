@@ -1,0 +1,47 @@
+# https://taskfile.dev
+
+version: '3'
+
+# silent: true
+
+tasks:
+  t1:
+    run: when_changed
+    cmds:
+      - echo "task 1 {{ .var }}" > ./a.txt
+    # sources:
+    #   - a.txt
+    generates:
+      - ./a.txt
+  t2:
+    deps: [t1]
+    method: checksum
+    watch: true
+    sources:
+      # - C:/Data/MyCode/task/a.txt
+      - ./a.txt
+    generates:
+      - ./b.txt
+    cmds:
+      - cat ./a.txt > ./b.txt
+      - echo "task 2" >> ./b.txt
+  t3:
+    deps: [t1,t2]
+    cmds:
+      - cat ./a.txt > ./c.txt
+      - cat ./b.txt >> ./c.txt
+      - echo "task 3" >> ./c.txt
+    sources:
+      - ./a.txt
+      - ./b.txt
+    generates:
+      - ./c.txt
+  t4:
+    deps: [t3]
+    cmds:
+      - cat ./c.txt > ./d.txt
+      - echo "task 4" >> ./d.txt
+    sources:
+      - ./c.txt
+    generates:
+      - ./d.txt

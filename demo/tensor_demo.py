@@ -34,11 +34,18 @@ base = torch.tensor([
 # print(base.unsqueeze(0))
 # print(base.mean(dim=2, dtype=float))
 print(base.dtype)
+base = base.to(dtype=float)
+
+print(torch.Size([1,2,3])+torch.Size([4,5]))
 
 assert base.shape == torch.Size([2, 2, 3])
 assert base.stride() == (6, 3, 1)
 assert base.transpose(1,2).stride() == base.permute(0,2,1).stride()
 assert base.transpose(1,2).size() == base.permute(0,2,1).size()
+U = torch.randn((8,3), dtype=torch.float64)
+D = torch.randn((8,), dtype=torch.float64)
+D = D * D
+diag = (torch.linalg.vecdot(U,U,dim=-1)+D).unsqueeze(dim=-1)
 for idx, tensor in enumerate([
     # base.view(1,12),                           
     # base.reshape([1,12]),                                   
@@ -58,6 +65,12 @@ for idx, tensor in enumerate([
     # base.select(0, 1),
     # base.mean(dim=1, dtype=float)
     # base.mean(dim=1,dtype=float).unsqueeze(1)
+    # torch.matmul(base.unsqueeze(-1),base.unsqueeze(-2)).sum(-1),
+    # torch.linalg.vecdot(base, base, dim=-1).unsqueeze(-1),
+    # torch.randn((8,3), dtype=torch.float64),
+    # base * torch.tensor([2,2,2])**2,
+    # torch.linalg.vecdot(base, torch.ones((2,2,3),dtype=float), dim=-1),
+    # torch.tensor([[1.0,2.0],[3.0,4.0]])
 ]):
     print('\n[',idx,']', tensor, '\n')
     # assert base.untyped_storage().data_ptr() == tensor.untyped_storage().data_ptr()
