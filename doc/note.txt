@@ -136,8 +136,7 @@ nvidia-smi  #查看显卡有没有被使用
 
 ------------------Nov 5----------------------------------------------------
 #conda 切换虚拟环境
-conda activate finai-1.1.0
 #屏蔽用户目录环境
-export PYTHONNOUSERSITE=1
+conda activate finai-1.1.0;export PYTHONNOUSERSITE=1
 # rabse 前期过渡冗长重复冲突
 git checkout --ours .;git add .;git rebase --continue

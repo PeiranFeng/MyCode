@@ -28,3 +28,27 @@ transformer:
 月内完成新模型架构
 需要培训GPU内核接口调用
 sparse attention
+
+---------------Nov 11-------------------
+
+host
+device: GPU
+global: cpu驱动gpu的函数
+
+warp: 不同warp可以不同指令（单waro是SIMT）
+block提供不同warp之间串行机制，和shared memory
+
+global memory：block之间共享，block是异步并发的，有争用问题
+每个block根据block index和总block数，来决定访问的内存位置来避免争用
+每个block的thread根据同样的方法，在shared memory/global memory中来避免争用
+
+if-else：在一个warp中会执行两次，第一次warp中一部分thread执行if中的逻辑，另一个部分执行else逻辑；第二次交换
+if-else中两个分支的逻辑都会执行
+mask bit： on/off warp通过这个控制thread
+
+CPU call kernal 是异步的 需要指定sync一下 等待kernal结果执行完
+
+- 写一个加法程序 nvcc cuda装了就行
+- memory: 
+  global memory coalesces
+  shared memory bank conflict
