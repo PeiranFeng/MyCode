@@ -52,3 +52,29 @@ CPU call kernal 是异步的 需要指定sync一下 等待kernal结果执行完
 - memory: 
   global memory coalesces
   shared memory bank conflict
+
+----------------
+算力和显存两个维度限制train
+算力要求有75%的空闲 同时
+显存要求有20G的空闲
+
+
+-------------------
+去想一想dictionary怎么用编码表示
+NAV求导（看一下triton对于后向的支持）
+fenghe.nn小工具发现： 
+  比如稀疏矩阵生成器（稀疏矩阵的引入可以同时算多个值）
+  sparse
+  查看document
+  查看attention is all your need
+  CSR format （稀疏矩阵）
+
+
+-------------------20251208----------------------
+数据不完全对齐-->股票池在随时间改变，由打掩码改为无需掩码
+空值无需覆盖
+速度提高,占用减半 32bit --> 16bit
+实验流程 forecast+allocation --> 端到端 既有f又有a 一次跑完
+
+Modules in Transformer: CudaKernel/DataLoader/Evaluation
+
