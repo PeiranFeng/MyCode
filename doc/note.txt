@@ -142,3 +142,4 @@ conda activate finai-1.1.0;export PYTHONNOUSERSITE=1
 git checkout --ours .;git add .;git rebase --continue
 
 export PYTHONPATH="/home/peiran/data/compass-app-jasper/app2:/home/peiran/data/compass-app-jasper/core:/home/peiran/data/compass-app-jasper/lib"
+export PYTHONPATH="$HOME/data/fenghe-nn/python"
