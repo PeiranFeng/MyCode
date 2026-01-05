@@ -78,3 +78,14 @@ fenghe.nn小工具发现：
 
 Modules in Transformer: CudaKernel/DataLoader/Evaluation
 
+-------------------20260105----------------------
+换模型browning motion
+相关性角度 1.0模型过拟合最小
+
+transformer的包装：attention, graph builder, until
+正在开发L(NAV) L(dropdown)
+
+架构
+训练轨迹（benchmark？）
+跑完结果的展示（6~8年的nav dropdown）
+确认输入输出 可调整参数 中间环节监控
