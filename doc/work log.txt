@@ -94,7 +94,8 @@ transformer的包装：attention, graph builder, until
 
 1.datasource 
 factor的载入应该遵从schema而非从数据中获取，因为数据中的factor可能不全，这样生成的factor reference应该是全空而不是没有，毕竟真实生产中可能会有这样的数据
---> 检查了下代码，现在的factor就是这样生成的
+--> 之前的factor是从schema获取的，但是最终的reference是从name列去重得到的，
+--> 新的实现中，在拼接表时逐个生成唯一的reference factor并且最终将其按照StringTensor valmap中的key升序排序
 
 2.time window
 可以用现在模型的backtest train window等生成
