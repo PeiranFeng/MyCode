@@ -142,5 +142,5 @@ conda deactivate
 # rabse 前期过渡冗长重复冲突
 git checkout --ours .;git add .;git rebase --continue
 
-export PYTHONPATH="/home/peiran/data/compass-app-jasper/app2:/home/peiran/data/compass-app-jasper/core:/home/peiran/data/compass-app-jasper/lib"
-export PYTHONPATH="$HOME/data/fenghe-nn/python"
+export PYTHONPATH="$HOME/data/compass-app-jasper/app2:$HOME/data/compass-app-jasper/core:$HOME/data/compass-app-jasper/lib"
+export PYTHONPATH="$HOME/data/fenghe-nn/python" # pytest 应在fenghe-nn下运行

@@ -89,3 +89,13 @@ transformer的包装：attention, graph builder, until
 训练轨迹（benchmark？）
 跑完结果的展示（6~8年的nav dropdown）
 确认输入输出 可调整参数 中间环节监控
+
+-------------20260106----------
+
+1.datasource 
+factor的载入应该遵从schema而非从数据中获取，因为数据中的factor可能不全，这样生成的factor reference应该是全空而不是没有，毕竟真实生产中可能会有这样的数据
+--> 检查了下代码，现在的factor就是这样生成的
+
+2.time window
+可以用现在模型的backtest train window等生成
+每个训练窗口的测试窗长度对齐到训练窗的步长（可以指定，但是不能比这个更小，否则测试窗没有办法覆盖全部时间）
