@@ -100,3 +100,9 @@ factor的载入应该遵从schema而非从数据中获取，因为数据中的fa
 2.time window
 可以用现在模型的backtest train window等生成
 每个训练窗口的测试窗长度对齐到训练窗的步长（可以指定，但是不能比这个更小，否则测试窗没有办法覆盖全部时间）
+
+
+-----------20260107--------------
+1. Stringtensor need test reindex
+2. Concatenate nav data of multipal 
+3. data source window default None
