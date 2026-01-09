@@ -106,3 +106,8 @@ factor的载入应该遵从schema而非从数据中获取，因为数据中的fa
 1. Stringtensor need test reindex
 2. Concatenate nav data of multipal 
 3. data source window default None
+
+
+----------20260109-----------
+window generator 
+datasource tradability mask -> reference stock
