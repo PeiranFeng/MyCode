@@ -144,3 +144,8 @@ git checkout --ours .;git add .;git rebase --continue
 
 export PYTHONPATH="$HOME/data/compass-app-jasper/app2:$HOME/data/compass-app-jasper/core:$HOME/data/compass-app-jasper/lib"
 export PYTHONPATH="$HOME/data/fenghe-nn/python" # pytest 应在fenghe-nn下运行
+
+
+-------------------20260113---------------------
+# find获取绝对目录
+find allocations/ -type f -exec readlink -f {} \;
