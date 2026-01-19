@@ -111,3 +111,32 @@ factor的载入应该遵从schema而非从数据中获取，因为数据中的fa
 ----------20260109-----------
 window generator 
 datasource tradability mask -> reference stock
+
+
+----------20260116-----------------------
+v4.0
+
+There are two model in the new Workflow: policy model and value model.
+The policy model output allocation which will computes the portfolio actural return with actrual price return.
+The value model output the portfolio return forecast which will be compared with portfolio actural return.
+
+In model architecture, v1.0 and v3.0 will merge multi feature of the same stock, than transform along time. 
+This will loss much useful infermations.
+
+For v4.0 the three dimension T, S, F is more flexible. They will exchange infermations with each other, and with the market feature, too.
+
+Note that v4.0 need be very careful about the over-fix problem.
+
+Next work:
+Refactor code.
+Test for better configuration.
+Encoding dictionary(later)
+Online(core point)
+
+Test Order:
+training with lookahead. 
+training without lookahead. 
+
+Core:
+long model and short model.
+min rebalance period need check.
