@@ -140,3 +140,75 @@ training without lookahead.
 Core:
 long model and short model.
 min rebalance period need check.
+
+
+---------------20260120-----------------
+**降内存压力的思路**
+*低颗粒度处理数据*
+Factor-Time-Stock 这样的小颗粒度 确定一个数据点： (factor time stock 1 embedding)
+做投资决策需要reduce factor 只留time stock （压缩为更高维综述的维度 即消除factor）
+
+第一层减少数据：每个factor只处理自己，单factor 单head 小embedding （小粒度用小特征值表示 Feadforward时视整个embedding=1*embedding）
+此时不跨越factor单head attention
+可以沿时间维度、股票维度，在head唯一 小embedding的情况下工作
+
+*膨胀表达*
+当压缩到股票的时候，融合时，好多信息好多方面在综合，多head，扩大embedding
+Time-Stock-Head (1, time, stock, head, embedding) head表示价值、风险等等各方面的概念 扩大embedding（Feadforward时视整个embedding=head*embedding）
+
+*临时通讯*
+使用torch的unpack pack等技术，将膨胀表达时需要的时候扩大内存，但是不会一直占据
+保证存储的数都是小的，按需计算，最终回到小embedding
+
+*编码*
+将source压缩为几个固定值：min max std mean等来综合表示，[position encoding]->4*8(embedding=8)->[feadforward]->E
+
+causal filling 的迁移距离对应于自然语言中词的位置
+fead feadforward对应自然语言中的 词和值
+
+*causal filling灵活性*
+引入一个特殊token None（需要与观测到0和没观测到区分开），当没观测到时填充None
+temoral discretization输出稀疏表结构 没问题
+现在需要将causal filling修改，承担将稀疏转变为稠密的工作，输出也是稀疏结构
+
+**layer**
+layer是树高 将二叉树扩为n叉树，减少layer，减少中间计算的内存消耗
+
+**dropdown**
+一个horizon内，股价每天变化，交易日当日损失直接体现
+linear period return 将单段梯度沿时间线向前回传
+
+只回溯到某个换仓日，以换仓日为起点1.0 不考虑之前的历史
+
+1.0 - Value * prod_{arrows}(1+chg_ratio)
+算到当前Horizon的换仓日为止
+Value是换仓当日换仓前的净值
+arrows是两个交易日之间的箭头
+
+
+-------------20260121----------
+
+同一个因子需要同一套编码 model/_GroupPositionEncoder.py
+数据驱动获取统计量 然后用统计量驱动position Encoding（parameter+PE）
+
+
+position Encoding
+一个factor是一个group  拥有同一个unit scale； unit scale由parameter产生，parameter的输入是一组输入数据的统计量，由GroupPostionEncoder产生
+
+写一个没有group的PE
+都用position_encoding的名字 只是看传不传group
+
+pytorch regist_buffer
+
+1. linear_indices:
+将core calculation改为矩阵乘法 需要学习一下torch的矩阵计算 做实验验证
+
+2. position_encoding no-group 版本的kernel在app2/model/_FixedRangeScalarEncoder_.py 下
+之间挪到fenghe-nn即可
+
+3. status也挪过来
+
+4. causal filling思路：
+python段获取参数信息，根据所获得的参数判断使用causalfilling的kernel还是latest_valid_reference的kernel
+返回一个NamedTuple的output
+

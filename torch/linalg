@@ -1,0 +1,7 @@
+@:
+    矩阵乘法
+
+torch.linalg.vecdot:
+    严格一维的向量内积，沿某一维度做乘法然后reduce 结果会降维
+    即(x * y).sum(dim=...)
+    要求除内积以外的其余维度要可boardcast，内积维度要相同
