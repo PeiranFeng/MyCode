@@ -136,6 +136,7 @@ Online(core point)
 Test Order:
 training with lookahead. 
 training without lookahead. 
+Broke out zero-line on test.
 
 Core:
 long model and short model.
@@ -212,3 +213,33 @@ pytorch regist_buffer
 python段获取参数信息，根据所获得的参数判断使用causalfilling的kernel还是latest_valid_reference的kernel
 返回一个NamedTuple的output
 
+---------20260126----------
+4.0将首先用于做空
+测试：择股 做多做空都试过
+做多： 择股
+做空： 择股->大盘择时  需要将个股信息整合成整体；数据端需要新增大盘指数的表现（ZQ已经标记好了）
+
+看一下Random with context；cumsum 主要看一下对于test的修改，总结一下测试集上的方法论
+
+draft > ready to review > draft(change require)
+
+
+causal filling 1-2d
+test state 0.5d
+market index(data source of generator knows which stock is index) 0.5d -> tbl_stock.parquet
+utility 0.5d
+window generator with hydra 0.5d
+
+
+----------------------
+测试用例的设置方法论
+
+对于block 需要至少move一步 不能只测第一步
+*** 要有大case 测试多个block（考虑block和stride）证明for loop
+*** empty case
+
+看边界
+*** 0，2^n - 1, 2^n + 1, 素数
+
+可以使用reference辅助验证
+-------------------------
