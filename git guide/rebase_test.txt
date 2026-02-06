@@ -28,3 +28,7 @@ If nothing else, you can use 'git rebase --abort' on your local branch, and the 
 # what else
 If you have pushed to origin before rebase. When next time you push local branch, it will be required to solve conflicts manually 
 which normally origin branch will be covered by local branch.
+**
+Do not use `git pull` to merge the rebased local branch and origin branch,
+you should push the local branch to the origin branch with command `git push --force-with-lease`
+**

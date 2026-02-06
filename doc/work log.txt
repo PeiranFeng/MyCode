@@ -243,3 +243,76 @@ window generator with hydra 0.5d
 
 可以使用reference辅助验证
 -------------------------
+
+---------20260127-------
+看一下cpp 17+ template/typename...
+写核心函数 将iterator zip_iterator等作为入参传进去
+
+---------20260128------
+movingstatistic pull 然后rebase 4.0
+用新的position encoder
+用新的Statistic数据结构（metric下）
+
+---------20260129--------
+Update causal_filling output (done)
+Refactor temporal_discretization as causal_filling
+Schema Class: load market-feature and stock-feature
+
+*Data source: move index (stock secrity type=Index) to marketData and remove it from stockData.
+  Note: all factors
+  Maybe it will be handled by zhaoqian
+
+Generator: Add Index return of Target in the generator.(chg_ratio)
+  (after data source)
+MarketData will has new factor. We need to handle this.
+Utility: convert output of temporal_discretization to discretization_graph
+  (Only need to move it to fenghe-nn and test it)
+
+
+----------2026.2.2----------
+缺失值编码为0向量，正常值编码为sin cos对 可以区分出正常值和缺失值
+coo_to_csr暴漏到python中
+
+1. temporal_discretization n source->1 target 
+(
+  transformer: encoding and scatter:
+    too big
+    过拟合
+)
+=>
+(
+  前置部分用简单的办法，即用统计量
+  n sources -> stats(mean/min/max) -> 1 target
+)
+
+现在的产出是coo的图，在transformer中在使用的
+coo图的缺点是算均值时加法的顺序在GPU中是不稳定的，结果不可重复
+
+csr的计算顺序是确定的，所以：
+coo->csr => 使用csr计算mean/min/max
+
+（只支持前向，csc是支持后向）
+
+python interface: define Class for COOGraph and CSRGraph
+注意要使用cache来存储coo-to-csr的转换结果，因为计算对GPU不友好的
+可以看fenghe-nn GraphConverter程序作为参考
+
+2. 可以用triton计算统计量
+input: 
+  CSRGraph
+  x: 1D tensor of size [numSource,], of values
+output:
+  y: 2D tensor of size [numTarget, 3], of mean, min and max
+
+可以从csr图计算每一行的有效值个数 所以不需要额外开内存存储
+
+计划: 
+  - 2.2 dataSource and schemaLoader（Done）
+  - 2.3 python interface for coo_to_csr.h
+  - 2.4 triton kernel for stats of CSRGraph
+
+------------2026.2.6-----------
+shcema yaml向前兼容
+schema class不需要hydra配置
+
+merge generator and rebase dataSource on develop
