@@ -316,3 +316,19 @@ shcema yaml向前兼容
 schema class不需要hydra配置
 
 merge generator and rebase dataSource on develop
+
+
+--------20260209---------
+
+尽量从yaml读入
+ - index 应该在schema里
+
+加global_name 保证全局不冲突
+name需要保证表内不冲突
+
+加index 到schema
+
+dataclass
+frozen=true
+但是要保证公开函数不进行自我修改
+比如cuda返回新的东西
