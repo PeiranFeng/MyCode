@@ -1,0 +1,230 @@
+validate是什么 它本来的作用是什么 怎么产生的 本质是什么
+
+● 看 GeneratorWithPartition 和 PeriodicPatternPartitioner 的实现：
+
+● Bash(find /home/peiran/data/compass-app-jasper/app2 -name "*.py" | xargs grep -l "GeneratorWithPartition\|PeriodicPatternPartitioner"
+      2>/dev/null)
+  ⎿  /home/peiran/data/compass-app-jasper/app2/generator/generator.py
+     /home/peiran/data/compass-app-jasper/app2/generator/__init__.py
+     /home/peiran/data/compass-app-jasper/app2/generator/partitioner.py
+
+  ---
+  validate 的本质
+
+  不是时间上的验证集，而是同一批数据里按位置周期性划出的子集。
+
+  PeriodicPatternPartitioner(pattern=["train","train","train","train","validate"]) 对训练窗口内的所有 target time steps 按序打标签：
+
+  t0→train  t1→train  t2→train  t3→train  t4→validate
+  t5→train  t6→train  t7→train  t8→train  t9→validate
+  ...
+
+  每5个时间步里有1个被标为 validate，4个是 train。
+
+  SubGroupGenerator 每次 __next__ 拿到完整数据后，用 mask = partition == name 筛出对应子集，把其他位置的 weight 置为0，只在对应时间步上计算
+  loss。
+
+  ---
+  它的作用
+
+  原本：提供一个不参与梯度更新的在样本内监控信号——在同一个训练窗口内观察模型在非训练时间步上的表现，用于 Logger/TensorBoard
+  追踪，辅助判断是否过拟合。
+
+  关键特点：
+  - train 和 validate 的 input（特征数据）完全相同——都看到整个训练窗口的历史数据
+  - 区别只在 target 的 mask，即在哪些时间步上计算 metric
+  - 所以 validate 是时间维度上的间隔采样，不是传统意义上独立的 hold-out set
+
+  ---
+  对 Optuna objective 的含义
+
+  用 validate score 做 objective 是合理的，但它本质上是对训练窗口内特定时间步的过拟合程度的估计，而非真正独立的样本外验证。如果想要更严格的
+  objective，应该考虑用单独划出的时间段（类似现有的 test.generator 的逻辑，但在训练窗口内划出一段不参与训练的末尾时间段）。
+
+❯ validate在这个模型中怎么估计出过拟合程度的
+
+● 需要结合 causal_filling 和 partition 机制一起看。
+
+  ---
+  关键前提：模型是因果的
+
+  _InputEncoder_ 里用了 causal_filling(reduced, mask, dim=-2, lookback=self.lookback)——在时间维度上只向后看，不能看到未来。
+
+  所以模型在时间步 t 做预测时，只能使用 t_ ≤ t 的特征。
+
+  ---
+  validate 的估计逻辑
+
+  partition 固定划分：
+  t0:train  t1:train  t2:train  t3:train  t4:validate
+  t5:train  t6:train  t7:train  t8:train  t9:validate
+
+  梯度只来自 train 步，validate 步从不产生梯度。
+
+  在某次迭代里，模型刚刚在 t0~t3 上得到梯度更新。然后评估 t4：
+  - 模型在 t4 的预测只依赖 t0~t4 的特征（因果）
+  - t4 的 target（收益率）从未参与梯度
+  - 如果模型在 t0~t3 上过拟合，它学到的是这4步的特定噪声模式，在 t4 上大概率泛化变差
+
+  ---
+  但这个信号有多弱
+
+  validate 步和 train 步时间相邻（间隔仅1步），特征分布几乎一致。金融时序上相邻两天的 feature 高度自相关，所以：
+
+  - 轻度过拟合：validate 和 train score 差距很小，难以区分
+  - 严重过拟合：才会在 validate 上显著恶化
+
+  这使得 validate 更像是局部平滑性检验（模型的预测能否从 t3 泛化到 t4），而不是传统 hold-out 验证集那种严格的样本外估计。
+
+  ---
+  和真正 hold-out 的区别
+
+  ┌────────────┬────────────────────────────────────────────────────────────┬────────────────────┐
+  │            │                       当前 validate                        │   传统 hold-out    │
+  ├────────────┼────────────────────────────────────────────────────────────┼────────────────────┤
+  │ 数据独立性 │ 时间相邻，特征高度相关                                     │ 时间隔离           │
+  ├────────────┼────────────────────────────────────────────────────────────┼────────────────────┤
+  │ 信息泄露   │ validate 步的特征在 input 里出现过（只是 target 未被训练） │ 完全隔离           │
+  ├────────────┼────────────────────────────────────────────────────────────┼────────────────────┤
+  │ 灵敏度     │ 低，只能检测严重过拟合                                     │ 高                 │
+  ├────────────┼────────────────────────────────────────────────────────────┼────────────────────┤
+  │ 用途       │ 训练监控、early stopping 辅助信号                          │ 模型选择、超参调优 │
+  └────────────┴────────────────────────────────────────────────────────────┴────────────────────┘
+
+  ---
+  结论：validate 利用因果模型「不能反向看」的特性，让特定时间步永远不产生梯度，从而在时序上形成一个微弱的局部泛化信号。它的本质是相邻时间步的外
+  推能力检验，对过拟合的敏感度有限，用于 Optuna objective 时应当谨慎——它更适合用作训练稳定性监控，而非严格的模型选择依据。
+
+
+ evaluator 的结构（对应 default3.yaml）
+
+  WeightedMetric 是一棵两层树，每次 __call__ 返回一个标量 total score：
+
+  TOTAL = stock_score + index_score
+
+  stock_score = 1.0 × cor_stock + 1.0 × err_stock + (-1.0) × var_stock
+  index_score = 1.0 × cor_index + 1.0 × err_index + (-1.0) × var_index
+
+  ---
+  每个 leaf metric 做了什么
+
+  ┌─────────────────────┬───────────────────────────────────┬─────────────────────────────────────────────────────────────┬──────────────────┐
+  │       metric        │               输入                │                            计算                             │       含义       │
+  ├─────────────────────┼───────────────────────────────────┼─────────────────────────────────────────────────────────────┼──────────────────┤
+  │ Correlation         │ forecast drift vs 实际收益        │ 预测值和真实值的加权相关系数（detach_denominator 稳定梯度） │ 排序能力         │
+  ├─────────────────────┼───────────────────────────────────┼─────────────────────────────────────────────────────────────┼──────────────────┤
+  │ ExplainedErrorRatio │ forecast drift vs 实际收益        │ 预测解释的方差占比（类 R²，以 baseline=0 为参照）           │ 拟合精度         │
+  ├─────────────────────┼───────────────────────────────────┼─────────────────────────────────────────────────────────────┼──────────────────┤
+  │ VarianceSimilarity  │ forecast variance vs 实际收益方差 │ (log(predicted_var) - log(actual_var))² 的均值              │ 波动率估计准确性 │
+  └─────────────────────┴───────────────────────────────────┴─────────────────────────────────────────────────────────────┴──────────────────┘
+
+  ---
+  返回值的方向
+
+  - Correlation：相关系数越高越好，但 Backend 返回的是负相关系数（minimize = maximize correlation）
+  - ExplainedErrorRatio：解释比例越高越好，同理返回负值
+  - VarianceSimilarity：weight = -1.0，原始值是误差（越小越好），乘以 -1 后加入 total 方向一致
+
+  所以 TOTAL 越小越好，score.backward() 最小化它是正确的，Optuna direction="minimize" 也是正确的。
+
+  ---
+  _process_batch 实际返回的是什么
+
+  return score.item()   # TOTAL 标量
+
+  就是上面那棵树的输出——stock_score + index_score 的数值，一个 float，同时涵盖了 stock 和 index 两个分支、三类 metric 的加权和。
+
+✻ Crunched for 33s · 1 background task still running (↓ to manage)
+
+❯ 1.为什么说correlation代表排序能力，代表什么的排序能力，为什么这个能力重要？2.什么叫解释的方差占比，为什么代表拟合的精度，这个精度对于模型训练
+有什么意义。3.以输入为参数，从数学上给出cor eer var的定义式
+
+● 先看 backend 实现：
+
+  ---
+  1. Correlation — 为什么代表排序能力
+
+  排序什么
+
+  在每个时间步 $t$，模型给所有股票 $i$ 输出一个预测 drift $\hat{y}{t,i}$，真实收益是
+  $y{t,i}$。策略的本质是按预测值排序，做多预测高的、做空预测低的。
+
+  排序能否赚钱，不取决于预测值的绝对大小，只取决于预测值和真实收益的相对顺序是否一致。Correlation
+  正好度量这一点——它对线性缩放和平移不敏感，只关心相对顺序的一致性。
+
+  为什么重要
+
+  即使模型完全不知道某只股票明天涨多少，只要它能正确判断「A比B涨得多」，策略就能盈利。这就是截面 alpha 的核心。
+
+  ---
+  2. ExplainedErrorRatio — 解释的方差占比
+
+  定义
+
+  设 baseline 误差为「用零预测」（baseline=0），则：
+
+  $$\text{EER} = \frac{\text{Var}(y) - \text{Var}(y - \hat{y})}{\text{Var}(y)}$$
+
+  分子是「加入预测后减少的误差」，分母是「不预测时的总误差」。这就是 $R^2$（决定系数）的形式：预测解释了多少原始收益的方差。
+
+  为什么代表拟合精度
+
+  $R^2 = 0$：预测和零一样没用
+  $R^2 = 1$：完美预测
+  $R^2 < 0$：比零预测还差（过拟合或方向反了）
+
+  Correlation 只关心排序，EER 还要求预测值的量级接近真实值。例如所有预测值偏大10倍，Correlation 不受影响，但 EER 会变差。
+
+  对训练的意义
+
+  EER 惩罚量级偏差，迫使模型不仅排对顺序，还要估出合理的幅度——这对下游的 allocation（仓位大小与预测幅度成比例）非常重要。
+
+  ---
+  3. 数学定义式
+
+  符号约定
+
+  设输入为：
+  - $\hat{y}$：模型预测的 drift（shape: [time, stock]）
+  - $y$：实际收益（同 shape）
+  - $w$：partition weight（同 shape，validate/train 步对应非零）
+  - $\varepsilon = 10^{-4}$（数值稳定项）
+
+  加权均值定义：
+  $$\overline{f}{w} = \frac{\sum{t,i} w_{t,i} \cdot f_{t,i}}{\sum_{t,i} w_{t,i} + \varepsilon}$$
+
+  condition_dim=stock 时，先在 stock 维做加权均值，再在 time 维聚合（两步 reduce）。
+
+  ---
+  Correlation（condition_dim=stock）
+
+  $$\text{Cor} = \overline{ \frac{\overline{\hat{y} \cdot y}{w,\text{stock}}}{\sqrt{\overline{\hat{y}^2}{w,\text{stock}} \cdot
+  \overline{y^2}{w,\text{stock}}} + \varepsilon} }{w,\text{time}}$$
+
+  其中分母使用 .detach()（detach_denominator=True），梯度只流过分子 $\overline{\hat{y} \cdot y}$，避免归一化项干扰梯度方向。
+
+  ---
+  ExplainedErrorRatio（baseline=0, condition_dim=stock）
+
+  $$\text{EER} = \overline{ \frac{\overline{y^2}{w,\text{stock}} - \overline{(y - \hat{y})^2}{w,\text{stock}}}{\overline{y^2}{w,\text{stock}} +
+  \varepsilon} }{w,\text{time}}$$
+
+  即每个时间步先在截面（stock 维）算 $R^2$，再在时间维加权平均。
+
+  ---
+  VarianceSimilarity（无 condition_dim）
+
+  设 $\hat{\sigma}^2$ 为模型预测的方差（forecast.params()["variance.A"]），$\sigma^2$ 为真实收益的滚动方差（winstats 计算）：
+
+  $$\text{VarSim} = \overline{\left(\log(\hat{\sigma}^2 + \varepsilon) - \log(\sigma^2 + \varepsilon)\right)^2}_{w}$$
+
+  对数域的 MSE——使大方差和小方差的误差在尺度上对等，避免大方差股票主导梯度。
+
+  ---
+  最终 TOTAL（minimize）
+
+  $$\text{TOTAL} = -(\underbrace{\text{Cor}\text{stock} + \text{EER}\text{stock}}{\text{越大越好}}) +
+  \underbrace{\text{VarSim}\text{stock}}{\text{越小越好}} - (\text{Cor}\text{index} + \text{EER}\text{index}) + \text{VarSim}\text{index}$$
+
+  Correlation 和 EER 的 backend 直接返回正值（越大越好），但在 WeightedMetric 里 weight=1.0 加入 total，而 total 被 score.backward()
+  最小化——所以实际上 backend 一定返回的是负相关系数、负 EER（或者 minimze 方向上 1 - correlation 类的变换）。

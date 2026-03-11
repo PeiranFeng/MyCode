@@ -161,3 +161,7 @@ auto [&]run(){}
 
 device端匿名函数用值捕获
 [=] __device__(){}
+
+-------------------20260305----------------------
+bash run.sh BACKTEST=sanity DATA_SOURCE_PATH="/data/JP_model-v4_end_2026-01-18/data"
+bash run.sh BACKTEST=sanity DATA_SOURCE_PATH="/data/JP_end_2026-02-10/data"
