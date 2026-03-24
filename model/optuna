@@ -1,0 +1,99 @@
+核心思路：Optuna Ask/Tell API + Makefile 外层循环
+
+  Optuna 提供了 ask/tell 接口，可以把"提议超参"和"上报结果"拆成两个独立的脚本调用，中间的训练过程完全由 Makefile 驱动。
+
+  ---
+  架构
+
+  OptimizeStudy.mk
+    └── shell for loop（顺序执行 N 个 trial）
+          OptimizeTrial.mk
+            ├── optuna_ask.py   → params.yaml     （问 Optuna 要这次参数）
+            ├── TrainMovingWindows.mk -j N          （并行跑所有窗口，现有管线不变）
+            │     ├── window-1/ → score.json
+            │     ├── window-2/ → score.json
+            │     └── ...
+            ├── mean_score.py   → trial_score.json  （汇总各窗口 score）
+            └── optuna_tell.py                      （把均值上报给 Optuna）
+
+  Trial 之间必须顺序（Bayesian 优化依赖历史结果），窗口之间并行（现有 -j N 不变）。
+
+  ---
+  三个新增文件
+
+  optuna_ask.py（只做一件事：写 params.yaml）
+  study = optuna.load_study(study_name, storage)
+  trial = study.ask()
+  params = {
+      "trial_number": trial.number,
+      "lr":       trial.suggest_float("lr", 1e-4, 1e-2, log=True),
+      "dropout":  trial.suggest_float("dropout", 0.0, 0.5),
+  }
+  yaml.dump(params, open("params.yaml", "w"))
+
+  optuna_tell.py（只做一件事：上报 score）
+  params     = yaml.safe_load(open("params.yaml"))
+  score      = json.load(open("trial_score.json"))["mean_score"]
+  study      = optuna.load_study(study_name, storage)
+  study.tell(params["trial_number"], score)
+
+  mean_score.py（汇总各窗口 score.json → trial_score.json）
+  scores = [json.load(open(f))["score"] for f in glob("*/score.json")]
+  json.dump({"mean_score": mean(scores)}, open("trial_score.json", "w"))
+
+  ---
+  Makefile 结构
+
+  OptimizeTrial.mk
+  .PHONY: all
+  all: trial_score.json
+      python optuna_tell.py --study $(STUDY_NAME) --storage $(STORAGE)
+
+  params.yaml:
+      python optuna_ask.py --study $(STUDY_NAME) --storage $(STORAGE)
+
+  windows: params.yaml
+      $(MAKE) -j $(JOBS) -f TrainMovingWindows.mk \
+          WINDOWS_DIR=$(WINDOWS_DIR) \
+          OVERRIDE="$(shell python params_to_override.py params.yaml)"
+
+  trial_score.json: windows
+      python mean_score.py
+
+  OptimizeStudy.mk
+  N_TRIALS ?= 20
+
+  .PHONY: optimize
+  optimize:
+      python optuna_init.py --study $(STUDY_NAME) --storage $(STORAGE)
+      for i in $$(seq 0 $$(($(N_TRIALS)-1))); do \
+          mkdir -p trial_$$i && \
+          $(MAKE) -C trial_$$i -f $(HERE)/OptimizeTrial.mk \
+              STUDY_NAME=$(STUDY_NAME) \
+              STORAGE=$(STORAGE) \
+              WINDOWS_DIR=$(WINDOWS_DIR) \
+              JOBS=$(JOBS); \
+      done
+
+  ---
+  train.py 唯一需要的改动
+
+  训练结束后写一个 score.json：
+  # 在 _run_training_loop 末尾记录最后一次 test score
+  json.dump({"score": test_score}, open("score.json", "w"))
+
+  ---
+  整体目录结构
+
+  {output_dir}/
+    optuna.db                    ← Optuna SQLite 存储
+    trial_0/
+      params.yaml
+      {window-1}/score.json
+      {window-2}/score.json
+      trial_score.json
+    trial_1/
+      ...
+    best_params.yaml             ← 搜索结束后从 optuna.db 导出
+
+  这样 Python 脚本只做 Optuna 的 ask/tell，不调度任何子进程，所有训练执行全部由 Makefile 管理。

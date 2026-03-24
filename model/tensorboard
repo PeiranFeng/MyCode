@@ -1,0 +1,125 @@
+ 我需要比较executor替换掉run_training_loop前后的变化 我需要着重看哪些metric；主要期望用来验证1.executor本身是否正确
+ 2.executor是否比run_training_loop更好/没有更差
+
+● 分两个目标来看：
+
+  ---
+  目标 1：验证 executor 本身正确
+
+  主要看训练收敛行为，这些指标如果异常说明 executor 本身有 bug：
+
+  ┌──────────────────────────────────┬────────────────┬───────────────────────────────────────────────┐
+  │              Metric              │    期望行为    │                   异常信号                    │
+  ├──────────────────────────────────┼────────────────┼───────────────────────────────────────────────┤
+  │ TOTAL/train                      │ 单调下降       │ 不收敛、震荡、NaN                             │
+  ├──────────────────────────────────┼────────────────┼───────────────────────────────────────────────┤
+  │ stock/cor/train、index/cor/train │ 逐步上升       │ 停滞或下降                                    │
+  ├──────────────────────────────────┼────────────────┼───────────────────────────────────────────────┤
+  │ stock/err/train                  │ 逐步上升       │ 负值且不改善                                  │
+  ├──────────────────────────────────┼────────────────┼───────────────────────────────────────────────┤
+  │ TOTAL/validate                   │ 下降后趋于平稳 │ 比 train 差太多说明 train/validate split 错了 │
+  └──────────────────────────────────┴────────────────┴───────────────────────────────────────────────┘
+
+  重点关注 train 和 validate 的曲线形态是否合理，特别是 train 与 validate 有无明显分离（说明 executor
+  的数据划分逻辑和 run_training_loop 是否一致）。
+
+  ---
+  目标 2：比较性能好坏
+
+  主要看 validate/test 上的指标（test 最权威）：
+
+  模型预测质量（越高越好）：
+  - stock/cor/test、index/cor/test — 核心指标，预测方向性
+  - stock/err/test、index/err/test — 解释方差能力
+
+  实际交易效果（越高越好）：
+  - ~idxAlloc/return/total/test — 净收益，最直接
+  - ~idxAlloc/risk/sharpe_ratio/test — 风险调整后收益
+  - ~idxAlloc/risk/drawdown/test — 回撤，越小越好（注意 weight=-1，TensorBoard 上越接近 0 越好）
+
+  可以忽略的：~idxAlloc/net（市场中性约束验证）、overshot（配额惩罚，只要接近 0 就正常）。
+
+  ---
+  实操建议
+
+  先跑 sanity（5窗口） 对比，只看 stock/cor、index/cor、~idxAlloc/return/total 的 test
+  值，如果这三个指标持平或更好，说明 executor 替换成功。
+
+--------------------------------
+  四个子指标的性质与趋势
+
+  cor（Pearson 相关系数）
+
+  - 数值性质：[-1, 1]，越大越好，目标正数
+  - 当前表现：
+    - train/validate 健康上升（stock: 0.08→0.32，index: 0.30→0.36）
+    - stock/cor/test ≈ 0（全程 0.002 左右），基本没有样本外预测力
+    - index/cor/test 0.047→0.12，缓慢改善
+  - 好的收敛位置：>0.1 有意义，>0.2 较好；当前 test 上 stock 分支接近失败
+
+  err（ExplainedErrorRatio ≈ R²）
+
+  - 数值性质：(-∞, 1]，0 = 与均值预测相当，负数 = 比均值还差，越大越好
+  - 当前表现：
+    - stock/err/test 从 -0.067 持续恶化到 -0.237，一直是负数且发散
+    - index/err/test 从 -0.20 改善到 +0.047，勉强过零
+  - 好的收敛位置：正数，ideally >0.05；stock 分支当前 test 上过拟合很严重
+
+  var（VarianceSimilarity，方差相似度）
+
+  - 数值性质：[0, ∞)，越小越好（是损失，TOTAL 中 weight=-1 给惩罚）
+  - 当前表现（index 分支）：
+    - train: 0.395→0.004（几乎完美，严重过拟合训练集）
+    - validate: 0.765→0.324（改善但远大于 train）
+    - test: 2.605→1.977（train 和 test 相差 50 倍，泛化极差）
+  - 好的收敛位置：越小越好，但更重要的是 train/validate/test 三者的 gap 不应该太大；此处说明模型在 train
+  窗口内把方差规律硬记下来了
+
+  short_dice（DiceCorrelation on short side）
+
+  - 数值性质：[-1, 1]，越大越好，衡量做空信号的质量（upper_bound: 0）
+  - 当前表现：
+    - stock/short_dice/test 全程 -0.12～-0.14，负数：model 的做空信号在 test 期间是反向的
+    - index/short_dice/test -0.17→-0.07，在改善但仍为负
+    - train 上 stock 是 0.26（好），test 上是 -0.14，train/test 分歧极大
+  - 好的收敛位置：正数，且与 validate 接近
+
+  ---
+  TOTAL 趋势
+
+  steps    train      validate   test
+  0-1000   -0.76      -1.80      -5.54
+  1-2000    0.43      -0.76      -4.90
+  2-3000    0.64      -0.42      -4.89   ← test 最优
+  3-4000    0.79      -0.22      -5.05   ↑ test 开始退化
+  4-5000    0.90      -0.07      -5.64
+  5-6000    0.99      +0.05      -5.78
+
+  train 和 validate 单调上升，test 在 2000-3000 步达到最优后持续下降——典型过拟合信号。
+
+  ---
+  Executor 提前终止策略
+
+  从 simple_executor.py 看，SimpleExecutorWithTest 有三个退出机制：
+
+  ① Stall counter（主要提前停止）
+  - 超过 warmup=300 步后，每步检查 TOTAL/validate 是否创新高
+  - 创新高 → stall_counter = 0
+  - 没有创新高 → stall_counter += 1
+  - stall_counter > stall=300 → 提前终止
+
+  ② Plateau detector（学习率衰减，非停止）
+  - 监测 TOTAL/train 是否在 plateau=300 步内没有改善
+  - 触发时：lr = lr × 0.5，然后重置 detector
+  - 不会停止训练，只缩小学习率
+
+  ③ NaN 检查
+  - 若某步 train metric 是 NaN → 立即退出
+
+  ---
+  为什么本次实验跑满了 6000 步而没有提前停止？
+
+  看 TOTAL/validate：全程单调上升（-1.80→+0.05），每步几乎都在创新高，stall_counter 一直被重置为 0。
+
+  这意味着：validate 无法感知 test 的过拟合。模型在训练窗口内越学越好，但对真正的样本外期（test）已经开始拟合噪声，而
+   executor 没有办法知道这一点——它只看 validate。
