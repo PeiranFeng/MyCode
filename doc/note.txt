@@ -124,6 +124,8 @@ https://fenghe.ai/web2/#/finance-home/index
 scp -r peiran@fengheasia.com@10.0.2.28:~/data/compass-app-jasper/job-0003 C:\Data\Jobs\BACKTEST_2Y,Seed-00\job-0003
 # 从本地拷贝到服务器
 scp -r /path/to/local_dir username@server_ip:/path/to/remote_dir
+# 含端口修改
+scp -P 50022 -r C:\Data\data\JP_end_all_stock_2026-03-31 peiran@202.14.8.78:/data/JP_end_all_stock_2026-03-31
 
 # 多任务
 python ~/data/compass-app-jasper/app/parent_job.py --data /data/JP_end_2025-07-22/data_2 --run-level BACKTEST_2Y --seeds seed-00
@@ -168,9 +170,20 @@ bash run.sh BACKTEST=sanity DATA_SOURCE_PATH="/data/JP_end_2026-02-10/data"
 
 -------------------20260326----------------------
 #tensorboard
- ssh -L 6006:localhost:6006 peiran@fengheasia.com@10.0.2.28
- ssh -L 6006:localhost:6006 peiran@202.14.9.160 -p 50022
+ssh -L 6006:localhost:6006 peiran@fengheasia.com@10.0.2.28
+ssh -L 6006:localhost:6006 peiran@202.14.8.78 -p 50022
+
+bash /home/peiran/data/exp/tensorboard.sh
 
 -------------------20260428-----------------------
-ssh peiran@202.14.9.160 -p 50022
+ssh peiran@202.14.8.78 -p 50022
 ssh peiran@fengheasia.com@10.0.2.28
+
+
+-------------------20260520--------------------
+查看html
+ssh -p 50022 -L 8080:localhost:8080 peiran@202.14.8.78 
+python3 -m http.server 8080 --directory /path/to/your/files
+
+-------------------20260601------------------
+202.14.8.78 在家用192.168.20.101 22端口访问
